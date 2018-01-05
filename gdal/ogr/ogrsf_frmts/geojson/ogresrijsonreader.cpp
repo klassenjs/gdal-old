@@ -235,6 +235,10 @@ bool OGRESRIJSONReader::GenerateFeatureDefn( json_object* poObj )
                        "esriFieldTypeInteger") )
         {
             eFieldType = OFTInteger;
+        } else if ( EQUAL(json_object_get_string(poObjType),
+                          "esriFieldTypeDate") )
+        {
+            eFieldType = OFTDateTime;
         }
         OGRFieldDefn fldDefn( json_object_get_string(poObjName),
                               eFieldType );
@@ -242,6 +246,7 @@ bool OGRESRIJSONReader::GenerateFeatureDefn( json_object* poObj )
         json_object * const poObjLength =
             OGRGeoJSONFindMemberByName( poObj, "length" );
         if( poObjLength != NULL &&
+            eFieldType != OFTDateTime &&
             json_object_get_type(poObjLength) == json_type_int )
         {
             const int nWidth = json_object_get_int(poObjLength);
@@ -337,6 +342,25 @@ OGRFeature* OGRESRIJSONReader::ReadFeature( json_object* poObj )
                     {
                         poFeature->SetField(
                             nField, CPLAtofM(json_object_get_string(it.val)) );
+                    }
+                    else if( poLayer_->GetLayerDefn()->
+                              GetFieldDefn(nField)->GetType() == OFTDateTime )
+                    {
+                        GIntBig nTime = CPLAtoGIntBig(
+                                            json_object_get_string(it.val));
+
+                        time_t sec = (time_t)(nTime/1000);
+                        float msec = nTime % 1000;
+
+                        struct tm val;
+                        localtime_r(&sec, &val);
+                        val.tm_year += 1900;
+                        val.tm_mon  += 1;
+
+                        poFeature->SetField( nField,
+                                       val.tm_year, val.tm_mon, val.tm_mday,
+                                       val.tm_hour, val.tm_min,
+                                       (float)val.tm_sec + msec, 0 );
                     }
                     else
                     {
