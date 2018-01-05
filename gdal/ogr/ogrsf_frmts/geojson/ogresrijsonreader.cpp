@@ -253,7 +253,7 @@ bool OGRESRIJSONReader::GenerateFeatureDefn( json_object* poObj )
             // A dummy width of 2147483647 seems to indicate no known field with
             // which in the OGR world is better modelled as 0 field width.
             // (#6529)
-            if( nWidth != INT_MAX )
+            if( nWidth != INT_MAX && nWidth < 1073741822 )
                 fldDefn.SetWidth(nWidth);
         }
 
