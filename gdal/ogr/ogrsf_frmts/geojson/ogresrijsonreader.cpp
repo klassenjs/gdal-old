@@ -348,19 +348,20 @@ OGRFeature* OGRESRIJSONReader::ReadFeature( json_object* poObj )
                     {
                         GIntBig nTime = CPLAtoGIntBig(
                                             json_object_get_string(it.val));
+                        /* nTime is milliseconds since UNIX epoch */
 
-                        time_t sec = (time_t)(nTime/1000);
+                        time_t sec = (time_t)(nTime / 1000);
                         float msec = nTime % 1000;
 
                         struct tm val;
-                        localtime_r(&sec, &val);
+                        gmtime_r(&sec, &val);
                         val.tm_year += 1900;
                         val.tm_mon  += 1;
 
                         poFeature->SetField( nField,
                                        val.tm_year, val.tm_mon, val.tm_mday,
                                        val.tm_hour, val.tm_min,
-                                       (float)val.tm_sec + msec, 0 );
+                                       (float)val.tm_sec + msec, 100 );
                     }
                     else
                     {
